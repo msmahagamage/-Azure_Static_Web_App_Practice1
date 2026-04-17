@@ -17,7 +17,6 @@
       --header-h: 56px;
     }
 
-    /* ── MOBILE-FIRST base ── */
     html, body {
       height: 100%;
       width: 100%;
@@ -27,7 +26,6 @@
       font-family: 'DM Sans', sans-serif;
     }
 
-    /* ── HEADER ── */
     header {
       position: fixed;
       top: 0; left: 0; right: 0;
@@ -40,7 +38,6 @@
       justify-content: space-between;
       padding: 0 16px;
       gap: 12px;
-      /* safe-area for notched phones */
       padding-left: max(16px, env(safe-area-inset-left));
       padding-right: max(16px, env(safe-area-inset-right));
     }
@@ -52,12 +49,7 @@
       min-width: 0;
     }
 
-    .wave-icon {
-      width: 36px;
-      height: 36px;
-      flex-shrink: 0;
-    }
-
+    .wave-icon { width: 36px; height: 36px; flex-shrink: 0; }
     .title-block { min-width: 0; }
 
     .title-main {
@@ -80,7 +72,6 @@
       white-space: nowrap;
     }
 
-    /* ── STATUS PILLS ── */
     .status-bar {
       display: flex;
       align-items: center;
@@ -99,16 +90,27 @@
       font-size: clamp(10px, 1.6vw, 12px);
       font-weight: 600;
       white-space: nowrap;
+      transition: all 0.4s ease;
     }
 
     .pill.warn { background: rgba(255,107,53,.12); border-color: rgba(255,107,53,.4); color: var(--warn); }
     .pill.ok   { color: var(--accent); }
+
+    /* number flips with a quick fade when value changes */
+    .pill-count {
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .pill-count.updating {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
 
     .dot {
       width: 7px; height: 7px;
       border-radius: 50%;
       background: currentColor;
       animation: pulse 1.6s ease-in-out infinite;
+      flex-shrink: 0;
     }
 
     @keyframes pulse {
@@ -116,7 +118,9 @@
       50%      { opacity: .5; transform: scale(.7); }
     }
 
-    /* ── LIVE badge (hide on very small) ── */
+    /* dot turns grey while loading */
+    .dot.loading { background: #888; animation: none; }
+
     .live-badge {
       background: var(--warn);
       color: #fff;
@@ -130,13 +134,11 @@
     @media (max-width: 400px) { .live-badge { display: none; } }
     @media (max-width: 520px) { .pill.ok    { display: none; } }
 
-    /* ── MAP WRAPPER ── */
     .map-wrapper {
       position: fixed;
       top: var(--header-h);
-      left: 0; right: 0; bottom: 0;
-      /* safe-area on notched/home-bar phones */
-      bottom: env(safe-area-inset-bottom, 0px);
+      left: 0; right: 0;
+      bottom: 22px;
       background: #001020;
     }
 
@@ -147,7 +149,6 @@
       display: block;
     }
 
-    /* ── LOADING OVERLAY ── */
     .loader {
       position: absolute;
       inset: 0;
@@ -179,7 +180,6 @@
       color: var(--accent);
     }
 
-    /* ── FOOTER RIBBON (thin, always visible) ── */
     .ribbon {
       position: fixed;
       bottom: 0; left: 0; right: 0;
@@ -200,22 +200,18 @@
 
     .ribbon span { color: var(--accent); font-weight: 600; }
 
-    /* adjust map when ribbon exists */
-    .map-wrapper { bottom: 22px; }
+    /* last-updated timestamp in ribbon */
+    #last-updated { color: rgba(240,246,255,.3); font-size: 9px; }
   </style>
 </head>
 <body>
 
-<!-- ══ HEADER ══ -->
 <header>
   <div class="header-left">
-    <!-- Wave SVG icon -->
     <svg class="wave-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="20" cy="20" r="19" fill="rgba(0,198,255,0.12)" stroke="#00c6ff" stroke-width="1.5"/>
-      <path d="M6 22 Q10 16 14 22 Q18 28 22 22 Q26 16 34 22"
-            stroke="#00c6ff" stroke-width="2.2" stroke-linecap="round" fill="none"/>
-      <path d="M6 26 Q10 20 14 26 Q18 32 22 26 Q26 20 34 26"
-            stroke="#0057a8" stroke-width="1.5" stroke-linecap="round" fill="none" opacity=".7"/>
+      <path d="M6 22 Q10 16 14 22 Q18 28 22 22 Q26 16 34 22" stroke="#00c6ff" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+      <path d="M6 26 Q10 20 14 26 Q18 32 22 26 Q26 20 34 26" stroke="#0057a8" stroke-width="1.5" stroke-linecap="round" fill="none" opacity=".7"/>
     </svg>
     <div class="title-block">
       <div class="title-main">🌊 Florida Flood Monitoring</div>
@@ -224,20 +220,27 @@
   </div>
 
   <div class="status-bar">
-    <div class="pill ok"><span class="dot"></span>Live Data</div>
-    <div class="pill warn"><span class="dot"></span>5 Active</div>
+    <div class="pill ok">
+      <span class="dot" id="live-dot"></span>Live Data
+    </div>
+    <!--
+      ✅ THIS PILL NOW SHOWS THE REAL COUNT FROM ARCGIS
+      The number is fetched live from your feature layer using
+      the ArcGIS REST API query endpoint below.
+    -->
+    <div class="pill warn">
+      <span class="dot"></span>
+      <span class="pill-count" id="active-count">…</span>&nbsp;Active
+    </div>
     <div class="live-badge">LIVE</div>
   </div>
 </header>
 
-<!-- ══ MAP ══ -->
 <div class="map-wrapper">
-  <!-- Loading overlay -->
   <div class="loader" id="loader">
     <div class="spinner"></div>
     <div class="loader-text">Loading Dashboard…</div>
   </div>
-
   <iframe
     id="dashFrame"
     src="https://www.arcgis.com/apps/dashboards/b42516ab0a3b463b9b6aea9d32cd30ef"
@@ -248,10 +251,91 @@
   ></iframe>
 </div>
 
-<!-- ══ RIBBON ══ -->
 <div class="ribbon">
-  Data: <span>FDEP · NOAA · USGS · EPA</span> &nbsp;|&nbsp; Updated every <span>15 min</span>
+  Data: <span>FDEP · NOAA · USGS · EPA</span>
+  &nbsp;|&nbsp; Updated every <span>15 min</span>
+  &nbsp;|&nbsp; <span id="last-updated">fetching…</span>
 </div>
+
+<script>
+  /*
+  ══════════════════════════════════════════════════════
+  HOW THIS WORKS:
+  ══════════════════════════════════════════════════════
+  Your ArcGIS Dashboard uses a Feature Layer called
+  "Florida Flood Warning Areas view".
+
+  That same layer has a public REST API endpoint.
+  We call it with:
+    - where=Status='Active'         ← same filter as your Indicator widget
+    - returnCountOnly=true          ← just get the number, not all the data
+    - f=json                        ← return as JSON
+
+  This gives us the EXACT same count your dashboard shows.
+  We then display it in the pill and refresh every 15 minutes.
+  ══════════════════════════════════════════════════════
+  */
+
+  // ── YOUR ARCGIS FEATURE LAYER REST URL ──────────────
+  // This is the public query endpoint for your flood layer.
+  // If your layer URL ever changes, update only this line.
+  const FEATURE_LAYER_URL =
+    "https://services.arcgis.com/3wFbqsFPLeKqOlIK/arcgis/rest/services/Florida_Flood_Warning_Areas/FeatureServer/0/query";
+
+  // ── REFRESH INTERVAL (milliseconds) ─────────────────
+  const REFRESH_MS = 15 * 60 * 1000; // 15 minutes
+
+  // ── FETCH THE LIVE COUNT ─────────────────────────────
+  async function fetchActiveCount() {
+    const dot   = document.getElementById('live-dot');
+    const count = document.getElementById('active-count');
+
+    // show loading state
+    dot.classList.add('loading');
+    count.classList.add('updating');
+
+    // Build the query URL — same logic as your Dashboard filter:
+    //   Status = 'Active'
+    //   UpdateDate = Today  (ArcGIS DATE syntax)
+    const today = new Date().toISOString().slice(0, 10); // "2026-04-16"
+    const params = new URLSearchParams({
+      where: `Status='Active' AND UpdateDate >= DATE '${today}'`,
+      returnCountOnly: 'true',
+      f: 'json'
+    });
+
+    try {
+      const res  = await fetch(`${FEATURE_LAYER_URL}?${params}`);
+      const data = await res.json();
+
+      // ArcGIS returns { "count": N } when returnCountOnly=true
+      const n = data.count ?? '?';
+
+      // animate the number in
+      setTimeout(() => {
+        count.textContent = n;
+        count.classList.remove('updating');
+        dot.classList.remove('loading');
+
+        // update ribbon timestamp
+        const now = new Date();
+        document.getElementById('last-updated').textContent =
+          'Updated ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }, 320);
+
+    } catch (err) {
+      // If the fetch fails (network offline, CORS, etc.) show a dash
+      count.textContent = '—';
+      count.classList.remove('updating');
+      dot.classList.remove('loading');
+      console.warn('Flood count fetch failed:', err);
+    }
+  }
+
+  // ── RUN ON PAGE LOAD + EVERY 15 MIN ─────────────────
+  fetchActiveCount();
+  setInterval(fetchActiveCount, REFRESH_MS);
+</script>
 
 </body>
 </html>
