@@ -298,9 +298,7 @@
     //   Status = 'Active'
     //   UpdateDate = Today  (ArcGIS DATE syntax)
     //   UpdateDate = Today (Alabama Central Time)
-const today = new Date().toLocaleDateString("en-CA", {
-  timeZone: "America/Chicago"  // Alabama = Central Time, auto-switches CST/CDT
-});
+    const today = new Date().toISOString().split('T')[0];
 
 const params = new URLSearchParams({
   where: `Status='Active' AND UpdateDate >= DATE '${today}'`,
