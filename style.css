@@ -1,0 +1,227 @@
+/* ===========================================
+   Florida Flood Monitoring System
+   style.css — all visual styling
+   =========================================== */
+
+/* ── 1. RESET & VARIABLES ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --navy:     #00122b;
+  --blue:     #0057a8;
+  --accent:   #00c6ff;
+  --warn:     #ff6b35;
+  --white:    #f0f6ff;
+  --header-h: 56px;
+  --ribbon-h: 22px;
+}
+
+/* ── 2. BASE PAGE ── */
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--navy);
+  color: var(--white);
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* ── 3. HEADER ── */
+header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  height: var(--header-h);
+  background: linear-gradient(135deg, var(--navy) 0%, #001f4d 100%);
+  border-bottom: 2px solid var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-left:  max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.wave-icon { width: 36px; height: 36px; flex-shrink: 0; }
+.title-block { min-width: 0; }
+
+.title-main {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(15px, 3.5vw, 24px);
+  letter-spacing: 1.5px;
+  color: var(--white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1;
+}
+
+.title-sub {
+  font-size: clamp(9px, 1.8vw, 12px);
+  color: var(--accent);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ── 4. STATUS PILLS ── */
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: clamp(10px, 1.6vw, 12px);
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all 0.4s ease;
+}
+
+.pill.ok {
+  background: rgba(0, 198, 255, 0.10);
+  border: 1px solid rgba(0, 198, 255, 0.30);
+  color: var(--accent);
+}
+
+.pill.warn {
+  background: rgba(255, 107, 53, 0.12);
+  border: 1px solid rgba(255, 107, 53, 0.40);
+  color: var(--warn);
+}
+
+/* count fades out/in when number changes */
+#active-count {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+#active-count.updating {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+/* ── 5. ANIMATED DOT ── */
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1;   transform: scale(1);   }
+  50%       { opacity: 0.5; transform: scale(0.7); }
+}
+
+.dot.loading {
+  background: #888;
+  animation: none;
+}
+
+/* ── 6. LIVE BADGE ── */
+.live-badge {
+  background: var(--warn);
+  color: #fff;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 13px;
+  letter-spacing: 1.5px;
+  padding: 3px 9px;
+  border-radius: 4px;
+}
+
+@media (max-width: 400px) { .live-badge { display: none; } }
+@media (max-width: 520px) { .pill.ok    { display: none; } }
+
+/* ── 7. MAP WRAPPER ── */
+.map-wrapper {
+  position: fixed;
+  top:    var(--header-h);
+  left:   0;
+  right:  0;
+  bottom: var(--ribbon-h);
+  background: #001020;
+}
+
+iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+/* ── 8. LOADING OVERLAY ── */
+.loader {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--navy);
+  gap: 18px;
+  transition: opacity 0.5s ease;
+}
+
+.loader.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(0, 198, 255, 0.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loader-text {
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 3px;
+  font-size: 18px;
+  color: var(--accent);
+}
+
+/* ── 9. FOOTER RIBBON ── */
+.ribbon {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: var(--ribbon-h);
+  background: rgba(0, 18, 43, 0.85);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(0, 198, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 10px;
+  color: rgba(240, 246, 255, 0.4);
+  letter-spacing: 1px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  z-index: 99;
+}
+
+.ribbon span    { color: var(--accent); font-weight: 600; }
+#last-updated   { color: rgba(240, 246, 255, 0.3); font-size: 9px; }
