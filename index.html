@@ -1,46 +1,256 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Florida Flood Monitoring System</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Florida Flood Monitoring System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    <style>
-        html, body {
-            margin: 0;
-            height: 100%;
-            font-family: Arial;
-        }
+    :root {
+      --navy:   #00122b;
+      --blue:   #0057a8;
+      --accent: #00c6ff;
+      --warn:   #ff6b35;
+      --white:  #f0f6ff;
+      --header-h: 56px;
+    }
 
-        header {
-            background: #003366;
-            color: white;
-            padding: 12px;
-            text-align: center;
-            font-size: 20px;
-            font-weight: bold;
-        }
+    /* ── MOBILE-FIRST base ── */
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      background: var(--navy);
+      color: var(--white);
+      font-family: 'DM Sans', sans-serif;
+    }
 
-        .container {
-            height: calc(100% - 60px); /* adjust for header height */
-        }
+    /* ── HEADER ── */
+    header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      height: var(--header-h);
+      background: linear-gradient(135deg, var(--navy) 0%, #001f4d 100%);
+      border-bottom: 2px solid var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      gap: 12px;
+      /* safe-area for notched phones */
+      padding-left: max(16px, env(safe-area-inset-left));
+      padding-right: max(16px, env(safe-area-inset-right));
+    }
 
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-    </style>
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .wave-icon {
+      width: 36px;
+      height: 36px;
+      flex-shrink: 0;
+    }
+
+    .title-block { min-width: 0; }
+
+    .title-main {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(15px, 3.5vw, 24px);
+      letter-spacing: 1.5px;
+      color: var(--white);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1;
+    }
+
+    .title-sub {
+      font-size: clamp(9px, 1.8vw, 12px);
+      color: var(--accent);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    /* ── STATUS PILLS ── */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .pill {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(0,198,255,.10);
+      border: 1px solid rgba(0,198,255,.3);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: clamp(10px, 1.6vw, 12px);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .pill.warn { background: rgba(255,107,53,.12); border-color: rgba(255,107,53,.4); color: var(--warn); }
+    .pill.ok   { color: var(--accent); }
+
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: .5; transform: scale(.7); }
+    }
+
+    /* ── LIVE badge (hide on very small) ── */
+    .live-badge {
+      background: var(--warn);
+      color: #fff;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 13px;
+      letter-spacing: 1.5px;
+      padding: 3px 9px;
+      border-radius: 4px;
+    }
+
+    @media (max-width: 400px) { .live-badge { display: none; } }
+    @media (max-width: 520px) { .pill.ok    { display: none; } }
+
+    /* ── MAP WRAPPER ── */
+    .map-wrapper {
+      position: fixed;
+      top: var(--header-h);
+      left: 0; right: 0; bottom: 0;
+      /* safe-area on notched/home-bar phones */
+      bottom: env(safe-area-inset-bottom, 0px);
+      background: #001020;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+
+    /* ── LOADING OVERLAY ── */
+    .loader {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--navy);
+      gap: 18px;
+      transition: opacity .5s ease;
+    }
+
+    .loader.hidden { opacity: 0; pointer-events: none; }
+
+    .spinner {
+      width: 48px; height: 48px;
+      border: 3px solid rgba(0,198,255,.2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .9s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loader-text {
+      font-family: 'Bebas Neue', sans-serif;
+      letter-spacing: 3px;
+      font-size: 18px;
+      color: var(--accent);
+    }
+
+    /* ── FOOTER RIBBON (thin, always visible) ── */
+    .ribbon {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 22px;
+      background: rgba(0,18,43,.85);
+      backdrop-filter: blur(8px);
+      border-top: 1px solid rgba(0,198,255,.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 10px;
+      color: rgba(240,246,255,.4);
+      letter-spacing: 1px;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      z-index: 99;
+    }
+
+    .ribbon span { color: var(--accent); font-weight: 600; }
+
+    /* adjust map when ribbon exists */
+    .map-wrapper { bottom: 22px; }
+  </style>
 </head>
-
 <body>
 
+<!-- ══ HEADER ══ -->
 <header>
-    Florida Flood Monitoring & Early Warning System
+  <div class="header-left">
+    <!-- Wave SVG icon -->
+    <svg class="wave-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="20" cy="20" r="19" fill="rgba(0,198,255,0.12)" stroke="#00c6ff" stroke-width="1.5"/>
+      <path d="M6 22 Q10 16 14 22 Q18 28 22 22 Q26 16 34 22"
+            stroke="#00c6ff" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+      <path d="M6 26 Q10 20 14 26 Q18 32 22 26 Q26 20 34 26"
+            stroke="#0057a8" stroke-width="1.5" stroke-linecap="round" fill="none" opacity=".7"/>
+    </svg>
+    <div class="title-block">
+      <div class="title-main">🌊 Florida Flood Monitoring</div>
+      <div class="title-sub">Early Warning System</div>
+    </div>
+  </div>
+
+  <div class="status-bar">
+    <div class="pill ok"><span class="dot"></span>Live Data</div>
+    <div class="pill warn"><span class="dot"></span>5 Active</div>
+    <div class="live-badge">LIVE</div>
+  </div>
 </header>
 
-<div class="container">
-    <iframe 
-        src="https://www.arcgis.com/apps/dashboards/b42516ab0a3b463b9b6aea9d32cd30ef">
-    </iframe>
+<!-- ══ MAP ══ -->
+<div class="map-wrapper">
+  <!-- Loading overlay -->
+  <div class="loader" id="loader">
+    <div class="spinner"></div>
+    <div class="loader-text">Loading Dashboard…</div>
+  </div>
+
+  <iframe
+    id="dashFrame"
+    src="https://www.arcgis.com/apps/dashboards/b42516ab0a3b463b9b6aea9d32cd30ef"
+    title="Florida Flood Monitoring Dashboard"
+    allowfullscreen
+    loading="lazy"
+    onload="document.getElementById('loader').classList.add('hidden')"
+  ></iframe>
+</div>
+
+<!-- ══ RIBBON ══ -->
+<div class="ribbon">
+  Data: <span>FDEP · NOAA · USGS · EPA</span> &nbsp;|&nbsp; Updated every <span>15 min</span>
 </div>
 
 </body>
