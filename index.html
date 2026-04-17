@@ -301,7 +301,7 @@
     const today = new Date().toISOString().split('T')[0];
 
 const params = new URLSearchParams({
-  where: `Status='Active' AND UpdateDate >= DATE '${today}'`,
+  where: `Status='Active'`,
   returnCountOnly: 'true',
   f: 'json'
 });
