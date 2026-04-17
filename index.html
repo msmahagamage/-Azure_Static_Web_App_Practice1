@@ -297,12 +297,16 @@
     // Build the query URL — same logic as your Dashboard filter:
     //   Status = 'Active'
     //   UpdateDate = Today  (ArcGIS DATE syntax)
-    const today = new Date().toISOString().slice(0, 10); // "2026-04-16"
-    const params = new URLSearchParams({
-      where: `Status='Active' AND UpdateDate >= DATE '${today}'`,
-      returnCountOnly: 'true',
-      f: 'json'
-    });
+    //   UpdateDate = Today (Alabama Central Time)
+const today = new Date().toLocaleDateString("en-CA", {
+  timeZone: "America/Chicago"  // Alabama = Central Time, auto-switches CST/CDT
+});
+
+const params = new URLSearchParams({
+  where: `Status='Active' AND UpdateDate >= DATE '${today}'`,
+  returnCountOnly: 'true',
+  f: 'json'
+});
 
     try {
       const res  = await fetch(`${FEATURE_LAYER_URL}?${params}`);
