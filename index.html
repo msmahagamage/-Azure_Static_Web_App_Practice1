@@ -5,339 +5,64 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Florida Flood Monitoring System</title>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --navy:   #00122b;
-      --blue:   #0057a8;
-      --accent: #00c6ff;
-      --warn:   #ff6b35;
-      --white:  #f0f6ff;
-      --header-h: 56px;
-    }
-
-    html, body {
-      height: 100%;
-      width: 100%;
-      overflow: hidden;
-      background: var(--navy);
-      color: var(--white);
-      font-family: 'DM Sans', sans-serif;
-    }
-
-    header {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      z-index: 100;
-      height: var(--header-h);
-      background: linear-gradient(135deg, var(--navy) 0%, #001f4d 100%);
-      border-bottom: 2px solid var(--accent);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 16px;
-      gap: 12px;
-      padding-left: max(16px, env(safe-area-inset-left));
-      padding-right: max(16px, env(safe-area-inset-right));
-    }
-
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      min-width: 0;
-    }
-
-    .wave-icon { width: 36px; height: 36px; flex-shrink: 0; }
-    .title-block { min-width: 0; }
-
-    .title-main {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: clamp(15px, 3.5vw, 24px);
-      letter-spacing: 1.5px;
-      color: var(--white);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      line-height: 1;
-    }
-
-    .title-sub {
-      font-size: clamp(9px, 1.8vw, 12px);
-      color: var(--accent);
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      font-weight: 500;
-      white-space: nowrap;
-    }
-
-    .status-bar {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-shrink: 0;
-    }
-
-    .pill {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      background: rgba(0,198,255,.10);
-      border: 1px solid rgba(0,198,255,.3);
-      border-radius: 999px;
-      padding: 4px 10px;
-      font-size: clamp(10px, 1.6vw, 12px);
-      font-weight: 600;
-      white-space: nowrap;
-      transition: all 0.4s ease;
-    }
-
-    .pill.warn { background: rgba(255,107,53,.12); border-color: rgba(255,107,53,.4); color: var(--warn); }
-    .pill.ok   { color: var(--accent); }
-
-    /* number flips with a quick fade when value changes */
-    .pill-count {
-      transition: opacity 0.3s ease, transform 0.3s ease;
-    }
-    .pill-count.updating {
-      opacity: 0;
-      transform: translateY(-4px);
-    }
-
-    .dot {
-      width: 7px; height: 7px;
-      border-radius: 50%;
-      background: currentColor;
-      animation: pulse 1.6s ease-in-out infinite;
-      flex-shrink: 0;
-    }
-
-    @keyframes pulse {
-      0%,100% { opacity: 1; transform: scale(1); }
-      50%      { opacity: .5; transform: scale(.7); }
-    }
-
-    /* dot turns grey while loading */
-    .dot.loading { background: #888; animation: none; }
-
-    .live-badge {
-      background: var(--warn);
-      color: #fff;
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 13px;
-      letter-spacing: 1.5px;
-      padding: 3px 9px;
-      border-radius: 4px;
-    }
-
-    @media (max-width: 400px) { .live-badge { display: none; } }
-    @media (max-width: 520px) { .pill.ok    { display: none; } }
-
-    .map-wrapper {
-      position: fixed;
-      top: var(--header-h);
-      left: 0; right: 0;
-      bottom: 22px;
-      background: #001020;
-    }
-
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      display: block;
-    }
-
-    .loader {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: var(--navy);
-      gap: 18px;
-      transition: opacity .5s ease;
-    }
-
-    .loader.hidden { opacity: 0; pointer-events: none; }
-
-    .spinner {
-      width: 48px; height: 48px;
-      border: 3px solid rgba(0,198,255,.2);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin .9s linear infinite;
-    }
-
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .loader-text {
-      font-family: 'Bebas Neue', sans-serif;
-      letter-spacing: 3px;
-      font-size: 18px;
-      color: var(--accent);
-    }
-
-    .ribbon {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      height: 22px;
-      background: rgba(0,18,43,.85);
-      backdrop-filter: blur(8px);
-      border-top: 1px solid rgba(0,198,255,.15);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      font-size: 10px;
-      color: rgba(240,246,255,.4);
-      letter-spacing: 1px;
-      padding-bottom: env(safe-area-inset-bottom, 0px);
-      z-index: 99;
-    }
-
-    .ribbon span { color: var(--accent); font-weight: 600; }
-
-    /* last-updated timestamp in ribbon */
-    #last-updated { color: rgba(240,246,255,.3); font-size: 9px; }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<header>
-  <div class="header-left">
-    <svg class="wave-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="20" cy="20" r="19" fill="rgba(0,198,255,0.12)" stroke="#00c6ff" stroke-width="1.5"/>
-      <path d="M6 22 Q10 16 14 22 Q18 28 22 22 Q26 16 34 22" stroke="#00c6ff" stroke-width="2.2" stroke-linecap="round" fill="none"/>
-      <path d="M6 26 Q10 20 14 26 Q18 32 22 26 Q26 20 34 26" stroke="#0057a8" stroke-width="1.5" stroke-linecap="round" fill="none" opacity=".7"/>
-    </svg>
-    <div class="title-block">
-      <div class="title-main">🌊 Florida Flood Monitoring</div>
-      <div class="title-sub">Early Warning System</div>
+  <!-- ══ HEADER ══ -->
+  <header>
+    <div class="header-left">
+      <svg class="wave-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="20" cy="20" r="19" fill="rgba(0,198,255,0.12)" stroke="#00c6ff" stroke-width="1.5"/>
+        <path d="M6 22 Q10 16 14 22 Q18 28 22 22 Q26 16 34 22"
+              stroke="#00c6ff" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+        <path d="M6 26 Q10 20 14 26 Q18 32 22 26 Q26 20 34 26"
+              stroke="#0057a8" stroke-width="1.5" stroke-linecap="round" fill="none" opacity=".7"/>
+      </svg>
+      <div class="title-block">
+        <div class="title-main">🌊 Florida Flood Monitoring</div>
+        <div class="title-sub">Early Warning System</div>
+      </div>
     </div>
+
+    <div class="status-bar">
+      <div class="pill ok">
+        <span class="dot" id="live-dot"></span>
+        Live Data
+      </div>
+      <div class="pill warn">
+        <span class="dot"></span>
+        <span id="active-count">…</span>&nbsp;Active
+      </div>
+      <div class="live-badge">LIVE</div>
+    </div>
+  </header>
+
+  <!-- ══ MAP ══ -->
+  <div class="map-wrapper">
+    <div class="loader" id="loader">
+      <div class="spinner"></div>
+      <div class="loader-text">Loading Dashboard…</div>
+    </div>
+    <iframe
+      id="dashFrame"
+      src="https://www.arcgis.com/apps/dashboards/b42516ab0a3b463b9b6aea9d32cd30ef"
+      title="Florida Flood Monitoring Dashboard"
+      allowfullscreen
+      loading="lazy"
+      onload="onDashboardLoaded()"
+    ></iframe>
   </div>
 
-  <div class="status-bar">
-    <div class="pill ok">
-      <span class="dot" id="live-dot"></span>Live Data
-    </div>
-    <!--
-      ✅ THIS PILL NOW SHOWS THE REAL COUNT FROM ARCGIS
-      The number is fetched live from your feature layer using
-      the ArcGIS REST API query endpoint below.
-    -->
-    <div class="pill warn">
-      <span class="dot"></span>
-      <span class="pill-count" id="active-count">…</span>&nbsp;Active
-    </div>
-    <div class="live-badge">LIVE</div>
+  <!-- ══ FOOTER RIBBON ══ -->
+  <div class="ribbon">
+    Data:&nbsp;<span>FDEP · NOAA · USGS · EPA</span>
+    &nbsp;|&nbsp; Refreshes every <span>15 min</span>
+    &nbsp;|&nbsp; <span id="last-updated">fetching…</span>
   </div>
-</header>
 
-<div class="map-wrapper">
-  <div class="loader" id="loader">
-    <div class="spinner"></div>
-    <div class="loader-text">Loading Dashboard…</div>
-  </div>
-  <iframe
-    id="dashFrame"
-    src="https://www.arcgis.com/apps/dashboards/b42516ab0a3b463b9b6aea9d32cd30ef"
-    title="Florida Flood Monitoring Dashboard"
-    allowfullscreen
-    loading="lazy"
-    onload="document.getElementById('loader').classList.add('hidden')"
-  ></iframe>
-</div>
-
-<div class="ribbon">
-  Data: <span>FDEP · NOAA · USGS · EPA</span>
-  &nbsp;|&nbsp; Updated every <span>15 min</span>
-  &nbsp;|&nbsp; <span id="last-updated">fetching…</span>
-</div>
-
-<script>
-  /*
-  ══════════════════════════════════════════════════════
-  HOW THIS WORKS:
-  ══════════════════════════════════════════════════════
-  Your ArcGIS Dashboard uses a Feature Layer called
-  "Florida Flood Warning Areas view".
-
-  That same layer has a public REST API endpoint.
-  We call it with:
-    - where=Status='Active'         ← same filter as your Indicator widget
-    - returnCountOnly=true          ← just get the number, not all the data
-    - f=json                        ← return as JSON
-
-  This gives us the EXACT same count your dashboard shows.
-  We then display it in the pill and refresh every 15 minutes.
-  ══════════════════════════════════════════════════════
-  */
-
-  // ── YOUR ARCGIS FEATURE LAYER REST URL ──────────────
-  // This is the public query endpoint for your flood layer.
-  // If your layer URL ever changes, update only this line.
-  const FEATURE_LAYER_URL =
-    "https://services.arcgis.com/ts4gk3YgS68yLGFl/arcgis/rest/services/Florida_Flood_Warning_Areas_view/FeatureServer/0/query";
-
-  // ── REFRESH INTERVAL (milliseconds) ─────────────────
-  const REFRESH_MS = 15 * 60 * 1000; // 15 minutes
-
-  // ── FETCH THE LIVE COUNT ─────────────────────────────
-  async function fetchActiveCount() {
-    const dot   = document.getElementById('live-dot');
-    const count = document.getElementById('active-count');
-
-    // show loading state
-    dot.classList.add('loading');
-    count.classList.add('updating');
-
-    // Build the query URL — same logic as your Dashboard filter:
-    //   Status = 'Active'
-    //   UpdateDate = Today  (ArcGIS DATE syntax)
-    //   UpdateDate = Today (Alabama Central Time)
-    const today = new Date().toISOString().split('T')[0];
-
-const params = new URLSearchParams({
-  where: `Status='Active'`,
-  returnCountOnly: 'true',
-  f: 'json'
-});
-
-    try {
-      const res  = await fetch(`${FEATURE_LAYER_URL}?${params}`);
-      const data = await res.json();
-
-      // ArcGIS returns { "count": N } when returnCountOnly=true
-      const n = data.count ?? '?';
-
-      // animate the number in
-      setTimeout(() => {
-        count.textContent = n;
-        count.classList.remove('updating');
-        dot.classList.remove('loading');
-
-        // update ribbon timestamp
-        const now = new Date();
-        document.getElementById('last-updated').textContent =
-          'Updated ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      }, 320);
-
-    } catch (err) {
-      // If the fetch fails (network offline, CORS, etc.) show a dash
-      count.textContent = '—';
-      count.classList.remove('updating');
-      dot.classList.remove('loading');
-      console.warn('Flood count fetch failed:', err);
-    }
-  }
-
-  // ── RUN ON PAGE LOAD + EVERY 15 MIN ─────────────────
-  fetchActiveCount();
-  setInterval(fetchActiveCount, REFRESH_MS);
-</script>
+  <!-- JS loaded last so the HTML elements above exist before the script runs -->
+  <script src="app.js"></script>
 
 </body>
 </html>
